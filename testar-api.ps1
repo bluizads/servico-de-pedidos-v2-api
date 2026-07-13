@@ -23,13 +23,16 @@ function Esperado($texto) {
     Write-Host "  [esperado] $texto" -ForegroundColor Yellow
 }
 
-# Chama a API e mostra o erro de forma legivel, sem poluir a tela
+# Chama a API e mostra o erro
 function Chamar($metodo, $rota, $corpo) {
     try {
         if ($corpo) {
-            return Invoke-RestMethod -Uri "$base$rota" -Method $metodo -ContentType "application/json" -Body $corpo
+            $resultado = Invoke-RestMethod -Uri "$base$rota" -Method $metodo -ContentType "application/json" -Body $corpo
         }
-        return Invoke-RestMethod -Uri "$base$rota" -Method $metodo
+        else {
+            $resultado = Invoke-RestMethod -Uri "$base$rota" -Method $metodo
+        }
+        return $resultado
     }
     catch {
         $status = $_.Exception.Response.StatusCode.value__
@@ -73,10 +76,10 @@ Write-Host "  (o preco foi CONGELADO no momento da compra)" -ForegroundColor Dar
 
 Titulo "4. Estoque apos o pedido"
 Esperado "Notebook 5->4, Mouse 10->8"
-$produtos = Chamar Get "/produtos"
-foreach ($p in $produtos) {
-    Write-Host "  $($p.nome): estoque = $($p.estoque)"
-}
+$nb = Chamar Get "/produtos/$($notebook.id)"
+$ms = Chamar Get "/produtos/$($mouse.id)"
+Write-Host "  Notebook: estoque = $($nb.estoque)"
+Write-Host "  Mouse:    estoque = $($ms.estoque)"
 
 Titulo "5. Pagar o pedido"
 Esperado "status vira PAID"
@@ -109,10 +112,8 @@ Chamar Post "/pedidos" $corpoEstoque | Out-Null
 
 Titulo "10. PROVA DA TRANSACAO: o estoque continua intacto?"
 Esperado "Notebook ainda em 4 (o rollback desfez o pedido que falhou)"
-$produtos = Chamar Get "/produtos"
-foreach ($p in $produtos) {
-    Write-Host "  $($p.nome): estoque = $($p.estoque)"
-}
+$nb = Chamar Get "/produtos/$($notebook.id)"
+Write-Host "  Notebook: estoque = $($nb.estoque)"
 
 Titulo "11. ERRO: pedido sem cliente"
 Esperado "400 - clienteId e obrigatorio"
@@ -132,24 +133,22 @@ $corpoCancelar = @"
 }
 "@
 $pedido2 = Chamar Post "/pedidos" $corpoCancelar
-$produtos = Chamar Get "/produtos"
-$mouseAgora = $produtos | Where-Object { $_.nome -eq "Mouse" }
+$ms = Chamar Get "/produtos/$($mouse.id)"
 Write-Host "  Pedido criado: $($pedido2.id) | status=$($pedido2.status)"
-Write-Host "  Mouse em estoque: $($mouseAgora.estoque)  (era 8, comprou 3)"
+Write-Host "  Mouse em estoque: $($ms.estoque)  (era 8, comprou 3)"
 
 Titulo "14. Cancelar o pedido (estoque deve VOLTAR)"
 Esperado "status CANCELED e Mouse volta para 8"
 $cancelado = Chamar Post "/pedidos/$($pedido2.id)/cancelar"
 Write-Host "  Status: $($cancelado.status)"
-$produtos = Chamar Get "/produtos"
-$mouseAgora = $produtos | Where-Object { $_.nome -eq "Mouse" }
-Write-Host "  Mouse em estoque: $($mouseAgora.estoque)"
+$ms = Chamar Get "/produtos/$($mouse.id)"
+Write-Host "  Mouse em estoque: $($ms.estoque)"
 
 # ===================== PAGINACAO ==================================
 
 Titulo "15. Paginacao (limit=1&offset=0)"
 $pagina = Chamar Get "/pedidos?limit=1&offset=0"
-Write-Host "  Retornou $($pagina.Count) pedido(s)"
+Write-Host "  Retornou $(@($pagina).Count) pedido(s)"
 
 Write-Host ""
 Write-Host "=== FIM DOS TESTES ===" -ForegroundColor Green
