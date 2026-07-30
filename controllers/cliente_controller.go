@@ -8,14 +8,22 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"servico-de-pedidos-v2-api/model"
-	"servico-de-pedidos-v2-api/repository"
+	//"servico-de-pedidos-v2-api/repository"
+	"context"
 )
 
-type ClienteController struct {
-	repo *repository.ClienteRepository
+type ClienteRepo interface {
+	Criar(ctx context.Context, req model.CriarClienteRequest) (model.Cliente, error)
+	Listar(ctx context.Context) ([]model.Cliente, error)
+	BuscarPorID(ctx context.Context, id string) (model.Cliente, error)
 }
 
-func NovoClienteController(repo *repository.ClienteRepository) *ClienteController {
+type ClienteController struct {
+	//repo *repository.ClienteRepository
+	repo ClienteRepo
+}
+
+func NovoClienteController(repo ClienteRepo) *ClienteController {
 	return &ClienteController{repo: repo}
 }
 
