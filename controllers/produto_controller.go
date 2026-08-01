@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -8,14 +9,21 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"servico-de-pedidos-v2-api/model"
-	"servico-de-pedidos-v2-api/repository"
+	//"servico-de-pedidos-v2-api/repository"
 )
 
-type ProdutoController struct {
-	repo *repository.ProdutoRepository
+type ProdutoRepo interface {
+	Criar(ctx context.Context, produto model.Produto) (model.Produto, error)
+	Listar(ctx context.Context) ([]model.Produto, error)
+	BuscarPorID(ctx context.Context, id string) (model.Produto, error)
 }
 
-func NovoProdutoController(repo *repository.ProdutoRepository) *ProdutoController {
+type ProdutoController struct {
+	//repo *repository.ProdutoRepository
+	repo ProdutoRepo // trocando repositorio para interface
+}
+
+func NovoProdutoController(repo ProdutoRepo) *ProdutoController {
 	return &ProdutoController{repo: repo}
 }
 
