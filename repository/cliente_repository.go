@@ -8,15 +8,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type ClienteRepository struct {
-	pool *pgxpool.Pool
+	pool DB
 }
 
-func NovoClienteRepository(pool *pgxpool.Pool) *ClienteRepository {
+func NovoClienteRepository(pool DB) *ClienteRepository {
 	return &ClienteRepository{pool: pool}
 }
 

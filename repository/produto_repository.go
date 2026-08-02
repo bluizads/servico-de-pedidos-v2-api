@@ -6,16 +6,15 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"servico-de-pedidos-v2-api/model"
 )
 
 type ProdutoRepository struct {
-	pool *pgxpool.Pool
+	pool DB
 }
 
-func NovoProdutoRepository(pool *pgxpool.Pool) *ProdutoRepository {
+func NovoProdutoRepository(pool DB) *ProdutoRepository {
 	return &ProdutoRepository{pool: pool}
 }
 
