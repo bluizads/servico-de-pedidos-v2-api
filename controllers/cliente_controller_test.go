@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"servico-de-pedidos-v2-api/model"
@@ -14,6 +15,7 @@ type clienteRepoFake struct {
 	cliente      model.Cliente
 	err          error
 	criarChamado bool
+	clientes     []model.Cliente
 }
 
 func (f *clienteRepoFake) Criar(ctx context.Context, req model.CriarClienteRequest) (model.Cliente, error) {
@@ -22,7 +24,7 @@ func (f *clienteRepoFake) Criar(ctx context.Context, req model.CriarClienteReque
 }
 
 func (f *clienteRepoFake) Listar(ctx context.Context) ([]model.Cliente, error) {
-	return nil, f.err
+	return f.clientes, f.err
 }
 
 func (f *clienteRepoFake) BuscarPorID(ctx context.Context, id string) (model.Cliente, error) {
@@ -86,5 +88,68 @@ func TestCriarCliente_Sucesso_NaoVazaHash(t *testing.T) {
 	}
 	if strings.Contains(gravar.Body.String(), "SEGREDO") {
 		t.Errorf("o hash da senha VAZOU no JSON!")
+	}
+}
+
+func TestListarClientes_Sucesso(t *testing.T) {
+	fake := &clienteRepoFake{clientes: []model.Cliente{{ID: "1"}, {ID: "2"}}}
+	controller := NovoClienteController(fake)
+	req := httptest.NewRequest(http.MethodGet, "/clientes", nil)
+	gravar := httptest.NewRecorder()
+	controller.Listar(gravar, req)
+
+	if gravar.Code != http.StatusOK {
+		t.Errorf("status = %d, esperado: 200", gravar.Code)
+	}
+}
+
+func TestListarClientes_Erro(t *testing.T) {
+	fake := &clienteRepoFake{err: errors.New("falha")}
+	controller := NovoClienteController(fake)
+	req := httptest.NewRequest(http.MethodGet, "/clientes", nil)
+	gravar := httptest.NewRecorder()
+	controller.Listar(gravar, req)
+
+	if gravar.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, esperado: 500", gravar.Code)
+	}
+}
+
+func TestBuscarCliente_NaoEncontrado(t *testing.T) {
+	fake := &clienteRepoFake{err: model.ErrClienteNaoEncontrado}
+	controller := NovoClienteController(fake)
+	req := httptest.NewRequest(http.MethodGet, "/clientes/xyz", nil)
+	gravar := httptest.NewRecorder()
+	controller.BuscarPorID(gravar, req)
+
+	if gravar.Code != http.StatusNotFound {
+		t.Errorf("status = %d, esperado: 404", gravar.Code)
+	}
+}
+
+func TestBuscarCliente_Erro(t *testing.T) {
+	fake := &clienteRepoFake{err: errors.New("falha")}
+	controller := NovoClienteController(fake)
+	req := httptest.NewRequest(http.MethodGet, "/clientes/1", nil)
+	gravar := httptest.NewRecorder()
+	controller.BuscarPorID(gravar, req)
+
+	if gravar.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, esperado: 500", gravar.Code)
+	}
+}
+
+func TestBuscarCliente_Sucesso(t *testing.T) {
+	fake := &clienteRepoFake{cliente: model.Cliente{ID: "1", PasswordHash: "SEGREDO"}}
+	controller := NovoClienteController(fake)
+	req := httptest.NewRequest(http.MethodGet, "/clientes/1", nil)
+	gravar := httptest.NewRecorder()
+	controller.BuscarPorID(gravar, req)
+
+	if gravar.Code != http.StatusOK {
+		t.Errorf("status = %d, esperado: 200", gravar.Code)
+	}
+	if strings.Contains(gravar.Body.String(), "SEGREDO") {
+		t.Error("o hash da senha VAZOU no JSON!")
 	}
 }
