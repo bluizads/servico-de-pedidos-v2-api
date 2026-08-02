@@ -53,7 +53,7 @@ func TestCriarProduto_NomeVazio(t *testing.T) {
 	fake := &produtoRepoFake{}
 	controller := NovoProdutoController(fake)
 
-	req := httptest.NewRequest(http.MethodPost, "/produtos", strings.NewReader(`{"nome": ,"preco":10,"estoque":5}`))
+	req := httptest.NewRequest(http.MethodPost, "/produtos", strings.NewReader(`{"preco":10,"estoque":5}`))
 	gravar := httptest.NewRecorder()
 
 	controller.Criar(gravar, req)
@@ -67,7 +67,7 @@ func TestCriarProduto_ValoresNegativos(t *testing.T) {
 	fake := &produtoRepoFake{}
 	controller := NovoProdutoController(fake)
 
-	req := httptest.NewRequest(http.MethodPost, "/produtos", strings.NewReader(`{"nome": numerosNegativos, "preco":-1,"estoque":-5}`))
+	req := httptest.NewRequest(http.MethodPost, "/produtos", strings.NewReader(`{"nome": "caneta", "preco":-1,"estoque":-5}`))
 	gravar := httptest.NewRecorder()
 
 	controller.Criar(gravar, req)
