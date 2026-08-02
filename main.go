@@ -17,7 +17,10 @@ func main() {
 	contexto := context.Background()
 
 	// carregar do .env
-	configuracao := config.Load()
+	configuracao, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// abre a pool de conexao com o banco
 	pool, err := database.Conectar(contexto, configuracao.DatabaseURL)
