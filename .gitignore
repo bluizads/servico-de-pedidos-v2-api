@@ -1,1 +1,6 @@
 .env
+
+# perfis de cobertura de teste
+*.out
+cobertura
+coverage.html
