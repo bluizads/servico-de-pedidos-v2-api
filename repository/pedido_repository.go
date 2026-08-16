@@ -7,6 +7,7 @@ import (
 	"servico-de-pedidos-v2-api/model"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -302,4 +303,12 @@ func (repo *PedidoRepository) Cancelar(contexto context.Context, id string) (mod
 
 	pedido.Status = model.StatusCancelado
 	return pedido, nil
+}
+
+func traduzirErroEstoque(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23514" {
+		return model.ErrEstoqueInsuficiente
+	}
+	return err
 }
