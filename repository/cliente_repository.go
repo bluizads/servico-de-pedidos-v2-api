@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type ClienteRepository struct {
@@ -19,13 +18,7 @@ func NovoClienteRepository(pool DB) *ClienteRepository {
 	return &ClienteRepository{pool: pool}
 }
 
-func (repo *ClienteRepository) Criar(contexto context.Context, requisicao model.CriarClienteRequest) (model.Cliente, error) {
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(requisicao.Password), bcrypt.DefaultCost)
-	// bcrypt.DefaultCost : quanto maior, mais lento pra quebrar
-	if err != nil {
-		return model.Cliente{}, fmt.Errorf("erro ao gerar hash da senha: %w", err)
-	}
+func (repo *ClienteRepository) Criar(contexto context.Context, nome, email, senhaHash string) (model.Cliente, error) {
 
 	query :=
 		`
@@ -35,7 +28,7 @@ func (repo *ClienteRepository) Criar(contexto context.Context, requisicao model.
 		`
 
 	var criado model.Cliente
-	err = repo.pool.QueryRow(contexto, query, requisicao.Name, requisicao.Email, string(hash)).Scan(&criado.ID, &criado.Name, &criado.Email, &criado.PasswordHash, &criado.CreatedAt)
+	err := repo.pool.QueryRow(contexto, query, nome, email, senhaHash).Scan(&criado.ID, &criado.Name, &criado.Email, &criado.PasswordHash, &criado.CreatedAt)
 
 	// email duplicado: banco devolve 23505
 	var pgErr *pgconn.PgError

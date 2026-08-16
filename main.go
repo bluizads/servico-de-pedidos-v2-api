@@ -39,9 +39,10 @@ func main() {
 
 	//adicionando o service
 	produtoService := service.NovoProdutoService(produtoRepo)
+	clienteService := service.NovoClienteService(clienteRepo)
 
 	// controller recebe os repositorios
-	clienteController := controllers.NovoClienteController(clienteRepo)
+	clienteController := controllers.NovoClienteController(clienteService)
 	produtoController := controllers.NovoProdutoController(produtoService)
 	pedidoController := controllers.NovoPedidoController(pedidoRepo)
 
