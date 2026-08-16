@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -15,4 +16,9 @@ func responderJSON(w http.ResponseWriter, status int, dados any) {
 // escreve mensagem de erro em JSON
 func responderErro(w http.ResponseWriter, status int, mensagem string) {
 	responderJSON(w, status, map[string]string{"erro": mensagem})
+}
+
+func responderErroInterno(w http.ResponseWriter, err error) {
+	log.Printf("erro interno: %v", err)
+	responderErro(w, http.StatusInternalServerError, "erro interno do servidor")
 }

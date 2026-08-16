@@ -50,7 +50,7 @@ func (c *ProdutoController) Criar(w http.ResponseWriter, r *http.Request) {
 
 	criado, err := c.repo.Criar(r.Context(), produto)
 	if err != nil {
-		responderErro(w, http.StatusInternalServerError, err.Error())
+		responderErroInterno(w, err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func (c *ProdutoController) Criar(w http.ResponseWriter, r *http.Request) {
 func (c *ProdutoController) Listar(w http.ResponseWriter, r *http.Request) {
 	produtos, err := c.repo.Listar(r.Context())
 	if err != nil {
-		responderErro(w, http.StatusInternalServerError, err.Error())
+		responderErroInterno(w, err)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (c *ProdutoController) BuscarPorID(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if err != nil {
-		responderErro(w, http.StatusInternalServerError, err.Error())
+		responderErroInterno(w, err)
 		return
 	}
 

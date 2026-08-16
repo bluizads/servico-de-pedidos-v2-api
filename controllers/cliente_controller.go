@@ -50,7 +50,7 @@ func (c *ClienteController) Criar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		responderErro(w, http.StatusInternalServerError, err.Error())
+		responderErroInterno(w, err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func (c *ClienteController) Criar(w http.ResponseWriter, r *http.Request) {
 func (c *ClienteController) Listar(w http.ResponseWriter, r *http.Request) {
 	clientes, err := c.repo.Listar(r.Context())
 	if err != nil {
-		responderErro(w, http.StatusInternalServerError, err.Error())
+		responderErroInterno(w, err)
 		return
 	}
 	responderJSON(w, http.StatusOK, clientes)
@@ -77,7 +77,7 @@ func (c *ClienteController) BuscarPorID(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if err != nil {
-		responderErro(w, http.StatusInternalServerError, err.Error())
+		responderErroInterno(w, err)
 		return
 	}
 
