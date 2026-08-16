@@ -8,14 +8,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PedidoRepository struct {
-	pool *pgxpool.Pool
+	//pool *pgxpool.Pool
+	pool DB
 }
 
-func NovoPedidoRepository(pool *pgxpool.Pool) *PedidoRepository {
+func NovoPedidoRepository(pool DB) *PedidoRepository {
 	return &PedidoRepository{pool: pool}
 }
 
@@ -109,7 +109,8 @@ func (repo *PedidoRepository) Criar(contexto context.Context, req model.CriarPed
 			`
 			UPDATE produtos
 			SET estoque = estoque - $1
-			WHERE id = $2`,
+			WHERE id = $2
+			AND estoque >= $1`,
 			itemReq.Quantidade, produto.ID,
 		)
 
@@ -311,4 +312,17 @@ func traduzirErroEstoque(err error) error {
 		return model.ErrEstoqueInsuficiente
 	}
 	return err
+}
+
+func (repo *PedidoRepository) AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error) {
+	resultado, err := repo.pool.Exec(contexto,
+		`UPDATE produtos SET estoque = estoque - $1 WHERE id = $2 AND estoque >= $1`,
+		quantidade, produtoID,
+	)
+	err = traduzirErroEstoque(err)
+	if err != nil {
+		return 0, fmt.Errorf("erro ao atualizar estoque: %w", err)
+	}
+
+	return resultado.RowsAffected(), nil
 }
