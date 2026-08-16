@@ -10,6 +10,7 @@ import (
 	"servico-de-pedidos-v2-api/database"
 	"servico-de-pedidos-v2-api/repository"
 	"servico-de-pedidos-v2-api/routes"
+	"servico-de-pedidos-v2-api/service"
 )
 
 func main() {
@@ -36,9 +37,12 @@ func main() {
 	produtoRepo := repository.NovoProdutoRepository(pool)
 	pedidoRepo := repository.NovoPedidoRepository(pool)
 
+	//adicionando o service
+	produtoService := service.NovoProdutoService(produtoRepo)
+
 	// controller recebe os repositorios
 	clienteController := controllers.NovoClienteController(clienteRepo)
-	produtoController := controllers.NovoProdutoController(produtoRepo)
+	produtoController := controllers.NovoProdutoController(produtoService)
 	pedidoController := controllers.NovoPedidoController(pedidoRepo)
 
 	// rotas recebem os controllers
