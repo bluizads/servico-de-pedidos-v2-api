@@ -19,6 +19,14 @@ func NovoPedidoRepository(pool DB) *PedidoRepository {
 	return &PedidoRepository{pool: pool}
 }
 
+type PedidoRepositorioTransacao interface {
+	ClienteExiste(contexto context.Context, clienteID string) (bool, error)
+	InserirPedido(contexto context.Context, clienteID string) (model.Pedido, error)
+	BuscarProduto(contexto context.Context, produtoID string) (model.Produto, error)
+	InserirItem(contexto context.Context, pedidoID, produtoID string, precoNaCompra float64, quantidade int) (model.ItemPedido, error)
+	AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error)
+}
+
 func (repo *PedidoRepository) Criar(contexto context.Context, req model.CriarPedidoRequest) (model.Pedido, error) {
 	// abre a transacao
 	transacao, err := repo.pool.Begin(contexto)
@@ -314,8 +322,8 @@ func traduzirErroEstoque(err error) error {
 	return err
 }
 
-func (repo *PedidoRepository) AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error) {
-	resultado, err := repo.pool.Exec(contexto,
+func atualizarEstoqueComChecagem(contexto context.Context, db DB, produtoID string, quantidade int) (int64, error) {
+	resultado, err := db.Exec(contexto,
 		`UPDATE produtos SET estoque = estoque - $1 WHERE id = $2 AND estoque >= $1`,
 		quantidade, produtoID,
 	)
@@ -325,4 +333,8 @@ func (repo *PedidoRepository) AtualizarEstoqueComChecagem(contexto context.Conte
 	}
 
 	return resultado.RowsAffected(), nil
+}
+
+func (repo *PedidoRepository) AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error) {
+	return atualizarEstoqueComChecagem(contexto, repo.pool, produtoID, quantidade)
 }
