@@ -418,3 +418,25 @@ func (tx *pedidoRepositorioTx) InserirItem(contexto context.Context, pedidoID, p
 func (tx *pedidoRepositorioTx) AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error) {
 	return atualizarEstoqueComChecagem(contexto, tx.db, produtoID, quantidade)
 }
+
+func (repo *PedidoRepository) ExecutarEmTransacao(contexto context.Context, fn func(tx PedidoRepositorioTransacao) error) error {
+	transacao, err := repo.pool.Begin(contexto)
+	if err != nil {
+		return fmt.Errorf("erro ao abrir transacao: %w", err)
+	}
+	defer transacao.Rollback(contexto)
+
+	tx := &pedidoRepositorioTx{db: transacao}
+
+	err = fn(tx)
+	if err != nil {
+		return err
+	}
+
+	err = transacao.Commit(contexto)
+	if err != nil {
+		return fmt.Errorf("erro ao confirmar transacao: %w", err)
+	}
+
+	return nil
+}
