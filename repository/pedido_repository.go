@@ -27,6 +27,10 @@ type PedidoRepositorioTransacao interface {
 	AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error)
 }
 
+type pedidoRepositorioTx struct {
+	db DB
+}
+
 func (repo *PedidoRepository) Criar(contexto context.Context, req model.CriarPedidoRequest) (model.Pedido, error) {
 	// abre a transacao
 	transacao, err := repo.pool.Begin(contexto)
@@ -337,4 +341,80 @@ func atualizarEstoqueComChecagem(contexto context.Context, db DB, produtoID stri
 
 func (repo *PedidoRepository) AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error) {
 	return atualizarEstoqueComChecagem(contexto, repo.pool, produtoID, quantidade)
+}
+
+func (tx *pedidoRepositorioTx) ClienteExiste(contexto context.Context, clienteID string) (bool, error) {
+	var existe bool
+	err := tx.db.QueryRow(contexto,
+		`
+		SELECT EXISTS(
+		SELECT 1 
+		FROM clientes 
+		WHERE id = $1
+		)`,
+		clienteID).Scan(&existe)
+
+	if err != nil {
+		return false, fmt.Errorf("erro ao verificar cliente: %w", err)
+	}
+
+	return existe, nil
+}
+
+func (tx *pedidoRepositorioTx) BuscarProduto(contexto context.Context, produtoID string) (model.Produto, error) {
+	var produto model.Produto
+	err := tx.db.QueryRow(contexto,
+		`
+		SELECT id, nome, preco, estoque 
+		FROM produtos WHERE id = $1`,
+		produtoID,
+	).Scan(&produto.ID, &produto.Nome, &produto.Preco, &produto.Estoque)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.Produto{}, model.ErrProdutoNaoEncontrado
+	}
+
+	if err != nil {
+		return model.Produto{}, fmt.Errorf("erro ao buscar produto: %w", err)
+	}
+
+	return produto, nil
+}
+
+func (tx *pedidoRepositorioTx) InserirPedido(contexto context.Context, clienteID string) (model.Pedido, error) {
+	var pedido model.Pedido
+	err := tx.db.QueryRow(contexto,
+		`
+		INSERT INTO pedidos (cliente_id) 
+		VALUES ($1)
+		RETURNING id, cliente_id, status, created_at
+		`,
+		clienteID).Scan(&pedido.ID, &pedido.ClienteID, &pedido.Status, &pedido.CreatedAt)
+
+	if err != nil {
+		return model.Pedido{}, fmt.Errorf("erro ao criar pedido: %w", err)
+	}
+
+	return pedido, nil
+}
+
+func (tx *pedidoRepositorioTx) InserirItem(contexto context.Context, pedidoID, produtoID string, precoNaCompra float64, quantidade int) (model.ItemPedido, error) {
+	var item model.ItemPedido
+	err := tx.db.QueryRow(contexto,
+		`
+		INSERT INTO itens_pedido (pedido_id, produto_id, preco_na_compra, quantidade)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, pedido_id, produto_id, preco_na_compra, quantidade`,
+		pedidoID, produtoID, precoNaCompra, quantidade,
+	).Scan(&item.ID, &item.PedidoID, &item.ProdutoID, &item.PrecoNaCompra, &item.Quantidade)
+
+	if err != nil {
+		return model.ItemPedido{}, fmt.Errorf("erro ao criar item: %w", err)
+	}
+
+	return item, nil
+}
+
+func (tx *pedidoRepositorioTx) AtualizarEstoqueComChecagem(contexto context.Context, produtoID string, quantidade int) (int64, error) {
+	return atualizarEstoqueComChecagem(contexto, tx.db, produtoID, quantidade)
 }
