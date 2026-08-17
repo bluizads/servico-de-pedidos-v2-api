@@ -40,11 +40,12 @@ func main() {
 	//adicionando o service
 	produtoService := service.NovoProdutoService(produtoRepo)
 	clienteService := service.NovoClienteService(clienteRepo)
+	pedidoService := service.NovoPedidoService(pedidoRepo)
 
 	// controller recebe os repositorios
 	clienteController := controllers.NovoClienteController(clienteService)
 	produtoController := controllers.NovoProdutoController(produtoService)
-	pedidoController := controllers.NovoPedidoController(pedidoRepo)
+	pedidoController := controllers.NovoPedidoController(pedidoService)
 
 	// rotas recebem os controllers
 	router := routes.Configurar(clienteController, produtoController, pedidoController)
