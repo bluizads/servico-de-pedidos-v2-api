@@ -91,33 +91,3 @@ func (repo *ProdutoRepository) Listar(contexto context.Context) ([]model.Produto
 	}
 	return lista, nil
 }
-
-func (repo *ProdutoRepository) ReduzirEstoque(contexto context.Context, produtoID string, quantidade int) error {
-	query :=
-		`
-		UPDATE produtos 
-		SET estoque = estoque - $1 
-		WHERE id = $2
-		`
-
-	_, err := repo.pool.Exec(contexto, query, quantidade, produtoID)
-	if err != nil {
-		return fmt.Errorf("erro reduzir estoque: %w", err)
-	}
-	return nil
-}
-
-func (repo *ProdutoRepository) DevolverEstoque(contexto context.Context, produtoID string, quantidade int) error {
-	query :=
-		`
-		UPDATE produtos 
-		SET estoque = estoque + $1 
-		WHERE id = $2
-		`
-
-	_, err := repo.pool.Exec(contexto, query, quantidade, produtoID)
-	if err != nil {
-		return fmt.Errorf("erro devolver estoque: %w", err)
-	}
-	return nil
-}
